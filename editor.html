@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Edit and clean up your media files directly in your browser.">
+  <title>Editor — Gemini Watermark Remove</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+  <!-- Editor Header -->
+  <header class="editor-header" role="banner">
+    <div class="editor-header-inner">
+      <a href="./index.html" class="back-link" aria-label="Go back to home">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <polyline points="15,18 9,12 15,6"></polyline>
+        </svg>
+        Back
+      </a>
+      <span class="editor-file-info">
+        <span id="editor-file-name">No file</span>
+        <span class="editor-file-type" id="editor-file-type"></span>
+      </span>
+      <button class="theme-toggle" id="editor-theme-toggle" aria-label="Toggle dark mode" type="button">
+        <span class="icon-sun">☀️</span>
+        <span class="icon-moon">🌙</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Editor Main -->
+  <main class="editor-main" role="main">
+    <!-- Media Preview Area -->
+    <div class="editor-canvas-area" id="editor-canvas-area">
+      <div class="canvas-container" id="canvas-container">
+        <canvas id="media-canvas" class="media-canvas" aria-label="Media preview"></canvas>
+        <canvas id="mask-canvas" class="mask-canvas" aria-label="Mask overlay"></canvas>
+      </div>
+
+      <!-- Zoom Controls -->
+      <div class="zoom-controls" role="toolbar" aria-label="Zoom controls">
+        <button class="btn btn-small zoom-btn" id="zoom-out" aria-label="Zoom out" type="button">−</button>
+        <span class="zoom-level" id="zoom-level">100%</span>
+        <button class="btn btn-small zoom-btn" id="zoom-in" aria-label="Zoom in" type="button">+</button>
+        <button class="btn btn-small zoom-btn" id="zoom-fit" aria-label="Fit to screen" type="button">Fit</button>
+      </div>
+
+      <!-- No Media Message -->
+      <div class="no-media-message" id="no-media-message">
+        <p>No media loaded. Please go back and upload a file.</p>
+        <a href="./index.html" class="btn btn-primary">Go to Upload</a>
+      </div>
+
+      <!-- Loading Indicator -->
+      <div class="loading-indicator" id="loading-indicator" hidden>
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Loading media...</p>
+      </div>
+    </div>
+
+    <!-- Tool Panel -->
+    <aside class="tool-panel" id="tool-panel" role="complementary" aria-label="Editing tools">
+      <div class="tool-panel-scroll">
+        <!-- Tool Buttons -->
+        <div class="tool-group" role="toolbar" aria-label="Tool selection">
+          <button class="tool-btn active" id="tool-brush" data-tool="brush" aria-label="Brush tool" type="button">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M9.06 11.9l8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"></path>
+              <path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"></path>
+            </svg>
+            <span class="tool-label">Brush</span>
+          </button>
+          <button class="tool-btn" id="tool-rectangle" data-tool="rectangle" aria-label="Rectangle selection" type="button">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            </svg>
+            <span class="tool-label">Rect</span>
+          </button>
+          <button class="tool-btn" id="tool-eraser" data-tool="eraser" aria-label="Eraser tool" type="button">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M20 20H7L3 16c-1.5-1.5-1.5-4 0-5.5L13.5 1a3 3 0 0 1 4.24 0L20 3.26a3 3 0 0 1 0 4.24L9.5 18"></path>
+              <line x1="6.5" y1="13.5" x2="17" y2="3"></line>
+            </svg>
+            <span class="tool-label">Erase</span>
+          </button>
+          <button class="tool-btn" id="tool-clear" data-tool="clear" aria-label="Clear selection" type="button">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M18 6L6 18"></path>
+              <path d="M6 6l12 12"></path>
+            </svg>
+            <span class="tool-label">Clear</span>
+          </button>
+        </div>
+
+        <!-- Undo / Redo -->
+        <div class="tool-group" role="toolbar" aria-label="Undo and redo">
+          <button class="tool-btn" id="btn-undo" aria-label="Undo" type="button" disabled>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polyline points="1,4 1,10 7,10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            <span class="tool-label">Undo</span>
+          </button>
+          <button class="tool-btn" id="btn-redo" aria-label="Redo" type="button" disabled>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <polyline points="23,4 23,10 17,10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"></path>
+            </svg>
+            <span class="tool-label">Redo</span>
+          </button>
+        </div>
+
+        <!-- Brush Settings -->
+        <div class="tool-group">
+          <label class="slider-label" for="brush-size">Brush Size: <span id="brush-size-value">20</span>px</label>
+          <input type="range" class="slider" id="brush-size" min="2" max="100" value="20" step="1" aria-label="Brush size">
+        </div>
+
+        <div class="tool-group">
+          <label class="slider-label" for="strength">Strength: <span id="strength-value">80</span>%</label>
+          <input type="range" class="slider" id="strength" min="10" max="100" value="80" step="1" aria-label="Cleanup strength">
+        </div>
+
+        <!-- Before / After & Reset -->
+        <div class="tool-group" role="toolbar" aria-label="View options">
+          <button class="tool-btn" id="btn-before-after" aria-label="Toggle before and after preview" type="button">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect>
+              <line x1="12" y1="2" x2="12" y2="22"></line>
+            </svg>
+            <span class="tool-label" id="before-after-label">Before</span>
+          </button>
+          <button class="tool-btn" id="btn-reset" aria-label="Reset all edits" type="button">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <polyline points="3,3 3,8 8,8"></polyline>
+            </svg>
+            <span class="tool-label">Reset</span>
+          </button>
+        </div>
+
+        <!-- Auto Detect -->
+        <div class="tool-group">
+          <button class="btn btn-secondary" id="btn-auto-detect" type="button">Auto Detect Regions</button>
+        </div>
+
+        <!-- Processing / Export -->
+        <div class="tool-group export-group">
+          <button class="btn btn-primary btn-full" id="btn-process" type="button">Process</button>
+          <button class="btn btn-success btn-full" id="btn-download" type="button" disabled>Download</button>
+        </div>
+
+        <!-- Video-specific controls -->
+        <div class="video-controls" id="video-controls" hidden>
+          <div class="tool-group">
+            <label class="slider-label" for="video-current-time">Position: <span id="video-time-display">0:00 / 0:00</span></label>
+            <input type="range" class="slider" id="video-current-time" min="0" max="100" value="0" step="0.1" aria-label="Video position">
+          </div>
+          <div class="tool-group" role="toolbar" aria-label="Video playback controls">
+            <button class="tool-btn" id="video-play-pause" aria-label="Play or pause" type="button">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polygon points="6,3 20,12 6,21"></polygon>
+              </svg>
+              <span class="tool-label" id="video-play-label">Play</span>
+            </button>
+            <button class="tool-btn" id="video-seek-back" aria-label="Seek back 1 second" type="button">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="15,18 9,12 15,6"></polyline>
+              </svg>
+              <span class="tool-label">-1s</span>
+            </button>
+            <button class="tool-btn" id="video-seek-forward" aria-label="Seek forward 1 second" type="button">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="9,18 15,12 9,6"></polyline>
+              </svg>
+              <span class="tool-label">+1s</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Video warning -->
+        <div class="tool-group video-warning" id="video-warning" hidden>
+          <p class="warning-text">Video processing is computationally intensive. Large videos may be slow or exceed browser memory limits.</p>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="./assets/app.js"></script>
+  <script src="./assets/editor.js"></script>
+  <script>
+    (function() {
+      if (typeof window.GWR !== 'undefined' && window.GWR.initEditor) {
+        window.GWR.initEditor();
+      }
+    })();
+  </script>
+</body>
+</html>
